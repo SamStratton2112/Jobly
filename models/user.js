@@ -20,9 +20,9 @@ class User {
    *
    * Throws UnauthorizedError is user not found or wrong password.
    **/
-
-  static async authenticate(username, password) {
     // try to find the user first
+  static async authenticate(username, password) {
+    
     const result = await db.query(
           `SELECT username,
                   password,
@@ -164,15 +164,15 @@ class User {
       data.password = await bcrypt.hash(data.password, BCRYPT_WORK_FACTOR);
     }
 
-    const { setCols, values } = sqlForPartialUpdate(
-        data,
+    const { setCols, values } = sqlForPartialUpdate(data,
         {
           firstName: "first_name",
           lastName: "last_name",
           isAdmin: "is_admin",
         });
+    
     const usernameVarIdx = "$" + (values.length + 1);
-
+    // set sql var index to final spot 
     const querySql = `UPDATE users 
                       SET ${setCols} 
                       WHERE username = ${usernameVarIdx} 
@@ -181,6 +181,7 @@ class User {
                                 last_name AS "lastName",
                                 email,
                                 is_admin AS "isAdmin"`;
+    // spread values into new array with username last, all used by sql 
     const result = await db.query(querySql, [...values, username]);
     const user = result.rows[0];
 
