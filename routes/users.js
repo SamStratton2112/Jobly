@@ -11,6 +11,8 @@ const User = require("../models/user");
 const { createToken } = require("../helpers/tokens");
 const userNewSchema = require("../schemas/userNew.json");
 const userUpdateSchema = require("../schemas/userUpdate.json");
+const userApplySchema = require("../schemas/applyNew.json");
+const { json } = require("body-parser");
 
 const router = express.Router();
 
@@ -28,12 +30,10 @@ const router = express.Router();
  **/
 
 router.post("/", checkAdmin, async function (req, res, next) {
-  debugger
   try {
     const validator = jsonschema.validate(req.body, userNewSchema);
     console.log(validator)
     if (!validator.valid) {
-
       const errs = validator.errors.map(e => e.stack);
       throw new BadRequestError(errs);
     }
@@ -80,6 +80,23 @@ router.get("/:username", checkAdminOrUser, async function (req, res, next) {
   }
 });
 
+/**POST /[username]/jobs/[id] 
+ * add username/job id to applicaton table 
+ * returns {applied : jobId}
+ * 
+ * authorization required: Admin or user who is applying. 
+*/
+
+router.post('/:username/jobs/:id', checkAdminOrUser, async function (req, res,next){
+  try{
+    const jobId = +req.params.id;
+    const username = req.params.username
+    await User.apply(username, jobId);
+    return res.json({ applied: jobId });
+  }catch(e){
+    return next()
+  }
+})
 
 /** PATCH /[username] { user } => { user }
  *

@@ -7,6 +7,7 @@ const {
 } = require("../expressError");
 const db = require("../db.js");
 const User = require("./user.js");
+const Job = require("./job.js");
 const {
   commonBeforeAll,
   commonBeforeEach,
@@ -29,7 +30,7 @@ describe("authenticate", function () {
       firstName: "U1F",
       lastName: "U1L",
       email: "u1@email.com",
-      isAdmin: false,
+      isAdmin: false
     });
   });
 
@@ -140,6 +141,9 @@ describe("get", function () {
       lastName: "U1L",
       email: "u1@email.com",
       isAdmin: false,
+      applied: {
+        jobs: []
+      }
     });
   });
 
@@ -228,3 +232,28 @@ describe("remove", function () {
     }
   });
 });
+
+describe("apply", function(){
+  test("works", async function(){
+    const jobs = await Job.findAll()
+    let jobId = jobs[0].id
+    await User.apply("u1", jobId)
+
+    const res = await db.query(
+      `SELECT * FROM applications WHERE job_id=${jobId}`
+    )
+    expect(res.rows.length).toEqual(1)
+    expect(res.rows).toEqual([{
+      job_id: jobId,
+      username: "u1",
+    }])
+  });
+  test("Does not work when missing information ", async function(){
+  try{
+    await User.apply("u1")
+    fail()
+  }catch(err){
+    expect(err instanceof NotFoundError).toBeTruthy();
+  }
+  })  
+})

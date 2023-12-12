@@ -126,20 +126,23 @@ class User {
   static async get(username) {
     const userRes = await db.query(
           `SELECT username,
-                  first_name AS "firstName",
-                  last_name AS "lastName",
-                  email,
-                  is_admin AS "isAdmin"
-           FROM users
-           WHERE username = $1`,
+          first_name AS "firstName",
+          last_name AS "lastName",
+          email,
+          is_admin AS "isAdmin"
+          FROM users
+          WHERE username = $1`,
         [username],
     );
-
+    const userJobs = await db.query(
+      `SELECT job_id AS jobId FROM applications WHERE username = $1`,
+      [username]
+    );
     const user = userRes.rows[0];
-
+    const applied = {jobs: userJobs.rows}
     if (!user) throw new NotFoundError(`No user: ${username}`);
 
-    return user;
+    return {...user, applied};
   }
 
   /** Update user data with `data`.
@@ -204,6 +207,31 @@ class User {
     const user = result.rows[0];
 
     if (!user) throw new NotFoundError(`No user: ${username}`);
+  }
+
+  static async apply(username,jobId){
+    const jobCheck = await db.query(
+      `SELECT id FROM jobs Where id=$1`,
+      [jobId]
+    );
+    let job = jobCheck.rows[0]
+    if(!job){
+      throw new NotFoundError(`Job opeing with id:${jobId} does not exist`);
+    }
+    const userCheck = await db.query(
+      `SELECT username FROM users Where username=$1`,
+      [username]
+    );
+    let user = userCheck.rows[0];
+    if(!user){
+      throw new NotFoundError(`User with username:${username} does not exist`);
+    }
+
+    await db.query(
+      `INSERT INTO applications (job_id, username)
+      VALUES($1,$2)`,
+      [jobId,username]
+    )
   }
 }
 

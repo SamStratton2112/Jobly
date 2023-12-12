@@ -62,7 +62,7 @@ async function commonBeforeAll() {
     isAdmin: false,
   });
 
-  let res = await Job.create(
+  await Job.create(
     {
       title: "j1",
       salary: 1,
