@@ -36,9 +36,32 @@ function authenticateJWT(req, res, next) {
 function ensureLoggedIn(req, res, next) {
   try {
     if (!res.locals.user) throw new UnauthorizedError();
+
     return next();
   } catch (err) {
     return next(err);
+  }
+}
+
+function checkAdmin(req,res,next){
+  try{
+    if(!res.locals.user || res.locals.user.isAdmin !== true){
+      throw new UnauthorizedError();
+    }
+    return next();
+  }catch(e){
+    return next(e);
+  }
+}
+function checkAdminOrUser(req,res,next){
+  try{
+    const u = res.locals.user;
+    if(!(u && u.isAdmin || u.username === req.params.username)){
+      throw new UnauthorizedError();
+    }
+    return next();
+  }catch(e){
+    return next(e);
   }
 }
 
@@ -46,4 +69,6 @@ function ensureLoggedIn(req, res, next) {
 module.exports = {
   authenticateJWT,
   ensureLoggedIn,
+  checkAdmin,
+  checkAdminOrUser
 };

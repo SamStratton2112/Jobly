@@ -45,19 +45,48 @@ class Company {
   }
 
   /** Find all companies.
-   *
+   * 
+   *Filters optional (minEmployees, maxEmployees, name)
+   * 
    * Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
    * */
 
-  static async findAll() {
-    const companiesRes = await db.query(
-          `SELECT handle,
-                  name,
-                  description,
-                  num_employees AS "numEmployees",
-                  logo_url AS "logoUrl"
-           FROM companies
-           ORDER BY name`);
+  static async findAll(filters = {}) {
+    let query =`SELECT handle,
+                name,
+                description,
+                num_employees AS "numEmployees",
+                logo_url AS "logoUrl"
+                FROM companies`
+    const {minEmployees, maxEmployees, name} = filters;
+    let whereDetails = [];
+    let queryDetails = [];
+
+    // Throw error is max is greater than min
+    if(minEmployees > maxEmployees){
+      throw new BadRequestError("Min employees must be less than max employees!");
+    }
+    // If there is a value for minEmployees, push the value to queryDetails and then push the $(length totalused as index num) to whereDetails 
+    if(minEmployees !== undefined){
+      queryDetails.push(minEmployees);
+      whereDetails.push(`num_employees >= $${queryDetails.length}`);
+    }
+    // If there is a value for maxEmployees, push the value to queryDetails and then push the $(length total used as index num) to whereDetails 
+    if (maxEmployees !== undefined) {
+      queryDetails.push(maxEmployees);
+      whereDetails.push(`num_employees <= $${queryDetails.length}`);
+    }
+    // If there is a value for name, push the value to queryDetails and then push the $(length used as index num) to whereDetails 
+    if (name) {
+      queryDetails.push(`%${name}%`);
+      whereDetails.push(`name ILIKE $${queryDetails.length}`);
+    }
+    // if whereDetails has values then include them joined by space AND space. 
+    if (whereDetails.length > 0) {
+      query += " WHERE " + whereDetails.join(" AND ");
+    }
+    // query the correct where details
+    const companiesRes = await db.query(query, queryDetails);
     return companiesRes.rows;
   }
 
@@ -80,11 +109,18 @@ class Company {
            WHERE handle = $1`,
         [handle]);
 
+    const coJobs = await db.query(
+      `SELECT id,title,salary,equity,company_handle AS companyHandle
+      FROM jobs
+      WHERE company_handle = $1`,
+      [handle]
+    );
+    const jobs = coJobs.rows
     const company = companyRes.rows[0];
-
     if (!company) throw new NotFoundError(`No company: ${handle}`);
+    const co = {...company, jobs}
 
-    return company;
+    return co;
   }
 
   /** Update company data with `data`.
@@ -106,7 +142,7 @@ class Company {
           numEmployees: "num_employees",
           logoUrl: "logo_url",
         });
-    const handleVarIdx = "$" + (values.length + 1);
+    let handleVarIdx = "$" + (values.length + 1);
 
     const querySql = `UPDATE companies 
                       SET ${setCols} 
