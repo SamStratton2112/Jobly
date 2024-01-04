@@ -15,8 +15,6 @@ function sqlForPartialUpdate(dataToUpdate, jsToSql) {
   const cols = keys.map((colName, idx) =>
       `"${jsToSql[colName] || colName}"=$${idx + 1}`,
   );
-  console.log(cols.join(", "));
-  console.log(Object.values(dataToUpdate))
   // we return an array of stings that can be passed to sql
   return {
     setCols: cols.join(", "),

@@ -55,8 +55,8 @@ function checkAdmin(req,res,next){
 }
 function checkAdminOrUser(req,res,next){
   try{
-    const u = res.locals.user;
-    if(!(u && u.isAdmin || u.username === req.params.username)){
+    const u = res.locals;
+    if(!(u && u.user.isAdmin || u.user.username === req.params.username)){
       throw new UnauthorizedError();
     }
     return next();

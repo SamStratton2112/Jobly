@@ -57,6 +57,7 @@ router.post("/", checkAdmin, async function (req, res, next) {
 router.get("/", checkAdmin, async function (req, res, next) {
   try {
     const users = await User.findAll();
+    console.log("username", req.params.username)
     return res.json({ users });
   } catch (err) {
     return next(err);
@@ -73,6 +74,7 @@ router.get("/", checkAdmin, async function (req, res, next) {
 
 router.get("/:username", checkAdminOrUser, async function (req, res, next) {
   try {
+    console.log('get username')
     const user = await User.get(req.params.username);
     return res.json({ user });
   } catch (err) {
