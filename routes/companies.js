@@ -54,7 +54,9 @@ router.post("/", checkAdmin, async function (req, res, next) {
 router.get("/", async function (req, res, next) {
   try {
     let filters = req.query;
-    if(filters.minEmployees !== undefined){
+    if(filters.minEmployees !== undefined &&
+       filters.maxEmployees !== undefined &&
+       filters.minEmployees < filters.maxEmployees){
       let minNum = +filters.minEmployees
       filters.minEmployees = minNum
     }
